@@ -23,6 +23,12 @@ ecs = boto3.client('ecs')
 def listServices(clusterName):
     response = ecs.list_services(cluster=clusterName)
     serviceArns = response['serviceArns']
+    while response.get('nextToken', None) is not None:
+        response = ecs.list_services(
+            cluster=clusterName,
+            nextToken=response['nextToken']
+        )
+        serviceArns.extend(response['serviceArns'])
 
     return serviceArns
 
