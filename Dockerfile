@@ -7,8 +7,8 @@ ENV APP_NAME=$APP_NAME
 
 RUN mkdir -vp $DIR
 WORKDIR $DIR
-COPY *.sh *.py ./
-RUN ./build.sh
+COPY . .
+RUN ./build.sh && rm build.sh
 USER $RUN_USER
 
 CMD ["./run.sh"]
