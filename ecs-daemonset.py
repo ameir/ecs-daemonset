@@ -13,8 +13,6 @@ import time
 
 # Set up logger
 logging.getLogger(__name__)
-logging.basicConfig(format='%(asctime)s - %(levelname)s: %(message)s',
-                    datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 pp = pprint.PrettyPrinter(indent=4)
 
 # Set up boto client
@@ -38,7 +36,7 @@ def describeServices(clusterName, serviceArns):
     instance_count = len(getInstanceArns(clusterName))
 
     for serviceArn in serviceArns:
-        logging.info("Evaluating service ARN: {}".format(serviceArn))
+        logging.debug("Evaluating service ARN: {}".format(serviceArn))
 
         service_response = ecs.describe_services(
             cluster=clusterName, services=[serviceArn]
@@ -49,12 +47,12 @@ def describeServices(clusterName, serviceArns):
 
         # we only consider services with 'distinctInstance' placement
         if len(placement_constraints) and 'distinctInstance' not in [v['type'] for v in placement_constraints]:
-            logging.info("Service {} is not configured with distinctInstance placement.".format(serviceArn))
+            logging.debug("Service {} is not configured with distinctInstance placement.".format(serviceArn))
             continue
 
         # don't scale if we don't need to
         if desired_count == instance_count:
-            logging.info("Service {} already has correct desired count.".format(serviceArn))
+            logging.debug("Service {} already has correct desired count.".format(serviceArn))
             continue
 
         # check task for ECS_DAEMONSET label
@@ -95,13 +93,21 @@ def main():
         default='default',
         help='The short name or full Amazon Resource Name (ARN) of your ECS cluster. If you do not specify a cluster, the default cluster is assumed.'
     )
+    parser.add_argument(
+        '-l', '--log-level',
+        default='info',
+        help='Log level.'
+    )
     args = parser.parse_args()
+
+    logging.basicConfig(format='%(asctime)s - %(levelname)s: %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.getLevelName(args.log_level.upper()))
 
     sleep = os.getenv('RESOURCE_CHECK_INTERVAL', 60)
     while True:
         serviceArns = listServices(args.cluster)
         describeServices(args.cluster, serviceArns)
-        logging.info("Sleeping for {}s...".format(sleep))
+        logging.debug("Sleeping for {}s...".format(sleep))
         time.sleep(int(sleep))
 
 
