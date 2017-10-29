@@ -45,6 +45,11 @@ def describeServices(clusterName, serviceArns):
         desired_count = service_response['services'][0]['desiredCount']
         placement_constraints = service_response['services'][0]['placementConstraints']
 
+        # if `desired_count` is 0, consider it disabled
+        if desired_count == 0:
+            logging.debug("Service {} is disabled.".format(serviceArn))
+            continue
+
         # we only consider services with 'distinctInstance' placement
         if len(placement_constraints) and 'distinctInstance' not in [v['type'] for v in placement_constraints]:
             logging.debug("Service {} is not configured with distinctInstance placement.".format(serviceArn))
